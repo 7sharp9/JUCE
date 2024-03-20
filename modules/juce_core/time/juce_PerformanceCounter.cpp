@@ -77,15 +77,17 @@ void PerformanceCounter::Statistics::addResult (double elapsed) noexcept
 
 static String timeToString (double secs)
 {
-    return String ((int64) (secs * (secs < 0.01 ? 1000000.0 : 1000.0) + 0.5))
-                    + (secs < 0.01 ? " microsecs" : " millisecs");
+    //format to nanoseconds, microseconds, milliseconds
+    return String ((secs * (secs < 0.00001 ? 1000000000.0 : (secs < 0.01 ? 1000000.0 : 1000.0)) + 0.5))
+                    + (secs < 0.00001 ? " nanosecs" : (secs < 0.01 ? " microsecs" : " millisecs"));
+
 }
 
 String PerformanceCounter::Statistics::toString() const
 {
     MemoryOutputStream s;
 
-    s << "Performance count for \"" << name << "\" over " << numRuns << " run(s)" << newLine
+    s << "Performance count for \"" << name << "\" over " << numRuns << " run(s) "
       << "Average = "   << timeToString (averageSeconds)
       << ", minimum = " << timeToString (minimumSeconds)
       << ", maximum = " << timeToString (maximumSeconds)
