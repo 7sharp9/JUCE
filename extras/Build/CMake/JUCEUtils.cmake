@@ -405,6 +405,8 @@ function(juce_add_binary_data target)
 
     add_library(${target} STATIC)
 
+    set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
     set(juce_binary_data_folder "${CMAKE_CURRENT_BINARY_DIR}/juce_binarydata_${target}/JuceLibraryCode")
 
     set(binary_file_names)
@@ -710,6 +712,11 @@ function(_juce_configure_bundle source_target dest_target)
             target_sources(${dest_target} PRIVATE "${storyboard_file}")
             set_property(TARGET ${dest_target} APPEND PROPERTY RESOURCE "${storyboard_file}")
         endif()
+    endif()
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set_target_properties(${dest_target} PROPERTIES
+            XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp")
     endif()
 
     set_target_properties(${dest_target} PROPERTIES

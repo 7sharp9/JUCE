@@ -23,8 +23,7 @@
 namespace juce
 {
 
-class Timer::TimerThread final : private Thread,
-                                 private AsyncUpdater
+class Timer::TimerThread final : private Thread
 {
 public:
     using LockType = CriticalSection; // (mysteriously, using a SpinLock here causes problems on some XP machines..)
@@ -32,12 +31,10 @@ public:
     TimerThread()  : Thread ("JUCE Timer")
     {
         timers.reserve (32);
-        triggerAsyncUpdate();
     }
 
     ~TimerThread() override
     {
-        cancelPendingUpdate();
         signalThreadShouldExit();
         callbackArrived.signal();
         stopThread (-1);
@@ -121,20 +118,15 @@ public:
 
     void callTimersSynchronously()
     {
-        if (! isThreadRunning())
-        {
-            // (This is relied on by some plugins in cases where the MM has
-            // had to restart and the async callback never started)
-            cancelPendingUpdate();
-            triggerAsyncUpdate();
-        }
-
         callTimers();
     }
 
     void addTimer (Timer* t)
     {
         const LockType::ScopedLockType sl (lock);
+
+        if (! isThreadRunning())
+            startThread (Thread::Priority::high);
 
         // Trying to add a timer that's already here - shouldn't get to this point,
         // so if you get this assertion, let me know!
@@ -281,11 +273,6 @@ private:
         return timers.front().countdownMs;
     }
 
-    void handleAsyncUpdate() override
-    {
-        startThread (Priority::high);
-    }
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TimerThread)
 };
 
@@ -344,18 +331,24 @@ void JUCE_CALLTYPE Timer::callPendingTimersSynchronously()
         (*instance)->callTimersSynchronously();
 }
 
-struct LambdaInvoker final : private Timer
+struct LambdaInvoker final : private Timer,
+                             private DeletedAtShutdown
 {
-    LambdaInvoker (int milliseconds, std::function<void()> f)  : function (f)
+    LambdaInvoker (int milliseconds, std::function<void()> f)
+        : function (std::move (f))
     {
         startTimer (milliseconds);
     }
 
-    void timerCallback() override
+    ~LambdaInvoker() final
     {
-        auto f = function;
+        stopTimer();
+    }
+
+    void timerCallback() final
+    {
+        NullCheckedInvocation::invoke (function);
         delete this;
-        f();
     }
 
     std::function<void()> function;
@@ -365,7 +358,7 @@ struct LambdaInvoker final : private Timer
 
 void JUCE_CALLTYPE Timer::callAfterDelay (int milliseconds, std::function<void()> f)
 {
-    new LambdaInvoker (milliseconds, f);
+    new LambdaInvoker (milliseconds, std::move (f));
 }
 
 } // namespace juce
