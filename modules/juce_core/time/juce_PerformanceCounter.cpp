@@ -87,20 +87,24 @@ void PerformanceCounter::Statistics::addResult (double elapsed) noexcept
     totalSeconds += elapsed;
 }
 
+
 static String timeToString (double secs)
 {
-    return String ((int64) (secs * (secs < 0.01 ? 1000000.0 : 1000.0) + 0.5))
-                    + (secs < 0.01 ? " microsecs" : " millisecs");
+    if (secs < 0.000001)
+        return String ((int64) (secs * 1000000000.0 + 0.5)) + " nanosecs";
+    if (secs < 0.01)
+        return String ((int64) (secs * 1000000.0 + 0.5)) + " microsecs";
+    return String ((int64) (secs * 1000.0 + 0.5)) + " millisecs";
 }
 
 String PerformanceCounter::Statistics::toString() const
 {
     MemoryOutputStream s;
 
-    s << "Performance count for \"" << name << "\" over " << numRuns << " run(s)" << newLine
-      << "Average = "   << timeToString (averageSeconds)
-      << ", minimum = " << timeToString (minimumSeconds)
-      << ", maximum = " << timeToString (maximumSeconds)
+    s << "Perf count for \"" << name << "\" over " << numRuns << " run(s)" << newLine
+      << "Ave = "   << timeToString (averageSeconds)
+      << ", min = " << timeToString (minimumSeconds)
+      << ", max = " << timeToString (maximumSeconds)
       << ", total = "   << timeToString (totalSeconds);
 
     return s.toString();
