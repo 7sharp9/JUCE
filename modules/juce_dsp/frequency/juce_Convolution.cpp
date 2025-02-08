@@ -809,7 +809,7 @@ private:
         return result;
     }
 
-    ProcessSpec processSpec { 44100.0, 128, 2 };
+    ProcessSpec processSpec { 48000.0, 128, 2 };
     AudioBuffer<float> impulseResponse = makeImpulseBuffer();
     double originalSampleRate = processSpec.sampleRate;
     Convolution::Normalise wantsNormalise = Convolution::Normalise::no;
