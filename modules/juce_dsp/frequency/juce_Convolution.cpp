@@ -864,11 +864,13 @@ public:
                               double sr,
                               Convolution::Stereo stereo,
                               Convolution::Trim trim,
-                              Convolution::Normalise normalise)
+                              Convolution::Normalise normalise, const std::function<void()>& irLoadedCallback)
     {
-        callLater ([b = std::move (buffer), sr, stereo, trim, normalise] (ConvolutionEngineFactory& f) mutable
+        callLater ([b = std::move (buffer), sr, stereo, trim, normalise, irLoadedCallback] (ConvolutionEngineFactory& f) mutable
         {
             f.setImpulseResponse ({ std::move (b), sr }, stereo, trim, normalise);
+            if (irLoadedCallback)
+                irLoadedCallback();
         });
     }
 
@@ -914,6 +916,9 @@ public:
             pendingCommand = nullptr;
     }
 
+
+
+    std::function<void()> irLoadedCallback;
     std::unique_ptr<MultichannelEngine> getEngine() { return factory.getEngine(); }
 
 private:
@@ -1083,9 +1088,10 @@ public:
                               double originalSampleRate,
                               Stereo stereo,
                               Trim trim,
-                              Normalise normalise)
+                              Normalise normalise,
+                              const std::function<void()>& callback)
     {
-        engineQueue->loadImpulseResponse (std::move (buffer), originalSampleRate, stereo, trim, normalise);
+        engineQueue->loadImpulseResponse (std::move (buffer), originalSampleRate, stereo, trim, normalise, callback);
     }
 
     void loadImpulseResponse (const void* sourceData,
@@ -1099,12 +1105,19 @@ public:
     }
 
     void loadImpulseResponse (const File& fileImpulseResponse,
-                              Stereo stereo,
-                              Trim trim,
-                              size_t size,
-                              Normalise normalise)
-    {
+                              Stereo      stereo,
+                              Trim        trim,
+                              size_t      size,
+                              Normalise   normalise) {
         engineQueue->loadImpulseResponse (fileImpulseResponse, stereo, trim, size, normalise);
+    }
+
+    std::shared_ptr<ConvolutionEngineQueue> getEngine() const
+    {
+        if (currentEngine == nullptr)
+            return nullptr;
+
+        return engineQueue;
     }
 
 private:
@@ -1262,9 +1275,10 @@ void Convolution::loadImpulseResponse (AudioBuffer<float>&& buffer,
                                        double originalSampleRate,
                                        Stereo stereo,
                                        Trim trim,
-                                       Normalise normalise)
+                                       Normalise normalise,
+                                       const std::function<void()>& callback)
 {
-    pimpl->loadImpulseResponse (std::move (buffer), originalSampleRate, stereo, trim, normalise);
+    pimpl->loadImpulseResponse (std::move (buffer), originalSampleRate, stereo, trim, normalise, callback);
 }
 
 void Convolution::prepare (const ProcessSpec& spec)

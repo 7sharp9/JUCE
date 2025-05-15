@@ -192,8 +192,7 @@ public:
     */
     template <typename ProcessContext,
               std::enable_if_t<std::is_same_v<typename ProcessContext::SampleType, float>, int> = 0>
-    void process (const ProcessContext& context) noexcept
-    {
+    void process (const ProcessContext& context) noexcept {
         processSamples (context.getInputBlock(), context.getOutputBlock(), context.isBypassed);
     }
 
@@ -257,9 +256,14 @@ public:
         @param isStereo                 selects either stereo or mono
         @param requiresTrimming         optionally trim the start and the end of the impulse response
         @param requiresNormalisation    optionally normalise the impulse response amplitude
+        @param callback                 a callback to be called when the IR is loaded
     */
-    void loadImpulseResponse (AudioBuffer<float>&& buffer, double bufferSampleRate,
-                              Stereo isStereo, Trim requiresTrimming, Normalise requiresNormalisation);
+    void loadImpulseResponse (AudioBuffer<float>&& buffer,
+                                           double originalSampleRate,
+                                           Stereo stereo,
+                                           Trim trim,
+                                           Normalise normalise,
+                                           const std::function<void()>& callback);
 
     /** This function returns the size of the current IR in samples. */
     int getCurrentIRSize() const;
@@ -271,6 +275,7 @@ public:
         considered separately (linear phase filters, for example).
     */
     int getLatency() const;
+    void setIrLoadedCallback (const std::function<void()>& cb);
 
 private:
     //==============================================================================
