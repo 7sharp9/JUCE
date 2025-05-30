@@ -223,7 +223,8 @@ public:
     */
     void loadImpulseResponse (const void* sourceData, size_t sourceDataSize,
                               Stereo isStereo, Trim requiresTrimming, size_t size,
-                              Normalise requiresNormalisation = Normalise::yes);
+                              Normalise requiresNormalisation = Normalise::yes,
+                              const std::function<void()>& callback = {});
 
     /** This function loads an impulse response from an audio file. It can load any
         of the audio formats registered in JUCE, and performs some resampling and
@@ -235,6 +236,7 @@ public:
         @param size                     the expected size for the impulse response after loading, can be
                                         set to 0 to requesting the original impulse response size
         @param requiresNormalisation    optionally normalise the impulse response amplitude
+        @param callback                 a callback to be called when the IR is loaded
     */
     void loadImpulseResponse (const File& fileImpulseResponse,
                               Stereo isStereo, Trim requiresTrimming, size_t size,

@@ -864,7 +864,8 @@ public:
                               double sr,
                               Convolution::Stereo stereo,
                               Convolution::Trim trim,
-                              Convolution::Normalise normalise, const std::function<void()>& irLoadedCallback)
+                              Convolution::Normalise normalise,
+                              const std::function<void()>& irLoadedCallback)
     {
         callLater ([b = std::move (buffer), sr, stereo, trim, normalise, irLoadedCallback] (ConvolutionEngineFactory& f) mutable
         {
@@ -879,11 +880,14 @@ public:
                               Convolution::Stereo stereo,
                               Convolution::Trim trim,
                               size_t size,
-                              Convolution::Normalise normalise)
+                              Convolution::Normalise normalise,
+                              const std::function<void()>& irLoadedCallback)
     {
-        callLater ([sourceData, sourceDataSize, stereo, trim, size, normalise] (ConvolutionEngineFactory& f) mutable
+        callLater ([sourceData, sourceDataSize, stereo, trim, size, normalise, irLoadedCallback] (ConvolutionEngineFactory& f) mutable
         {
             setImpulseResponse (f, sourceData, sourceDataSize, stereo, trim, size, normalise);
+            if (irLoadedCallback)
+                irLoadedCallback();
         });
     }
 
@@ -1099,9 +1103,10 @@ public:
                               Stereo stereo,
                               Trim trim,
                               size_t size,
-                              Normalise normalise)
+                              Normalise normalise,
+                              const std::function<void()>& callback)
     {
-        engineQueue->loadImpulseResponse (sourceData, sourceDataSize, stereo, trim, size, normalise);
+        engineQueue->loadImpulseResponse (sourceData, sourceDataSize, stereo, trim, size, normalise, callback);
     }
 
     void loadImpulseResponse (const File& fileImpulseResponse,
@@ -1257,9 +1262,10 @@ void Convolution::loadImpulseResponse (const void* sourceData,
                                        Stereo stereo,
                                        Trim trim,
                                        size_t size,
-                                       Normalise normalise)
+                                       Normalise normalise,
+                                       const std::function<void()>& callback)
 {
-    pimpl->loadImpulseResponse (sourceData, sourceDataSize, stereo, trim, size, normalise);
+    pimpl->loadImpulseResponse (sourceData, sourceDataSize, stereo, trim, size, normalise, callback);
 }
 
 void Convolution::loadImpulseResponse (const File& fileImpulseResponse,
