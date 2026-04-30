@@ -76,7 +76,7 @@ AudioParameterBool::~AudioParameterBool()
 }
 
 float AudioParameterBool::getValue() const                               { return value; }
-void AudioParameterBool::setValue (float newValue)                       { value = newValue; valueChanged (get()); }
+void AudioParameterBool::setValue (float newValue)                       { value = newValue >= 0.5f ? 1.0f : 0.0f; valueChanged (get()); }
 float AudioParameterBool::getDefaultValue() const                        { return valueDefault; }
 int AudioParameterBool::getNumSteps() const                              { return 2; }
 bool AudioParameterBool::isDiscrete() const                              { return true; }
